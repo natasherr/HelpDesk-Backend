@@ -19,8 +19,8 @@ def add_users():
     check_username = User.query.filter_by(username=username).first()
     check_email = User.query.filter_by(email=email).first()
 
-    print("Email", check_email)
-    print("Username", check_username)
+    # print("Email", check_email)
+    # print("Username", check_username)
 
     if check_username or check_email:
         return jsonify({"error":"Username/email exists"}), 404

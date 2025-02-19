@@ -1,29 +1,32 @@
 from flask import jsonify, request, Blueprint
 from model import db, Solution, Problem, Notification
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 solution_bp =Blueprint("solution_bp", __name__)
 
 
 
-def create_notification(user_id, message, type, reference_id=None):
+def create_notification(user_id, actor_id, message, type, reference_id=None):
     """
     Helper function to create a notification.
     """
-    new_notification = Notification(
+    notification = Notification(
         user_id=user_id,
+        actor_id=actor_id,
         message=message,
         type=type,
         reference_id=reference_id
     )
-    db.session.add(new_notification)
+    db.session.add(notification)
     db.session.commit()
 
 
 # Create a Solution
 @solution_bp.route('/solutions', methods=['POST'])
+@jwt_required()
 def create_solution():
+    current_user_id = get_jwt_identity()
     data = request.get_json()
-    user_id = data['user_id']
     description = data['description']
     tag_id = data['tag_id']
     problem_id = data['problem_id']
@@ -36,7 +39,7 @@ def create_solution():
     # Create Solution
     new_solution = Solution(
         description=description,
-        user_id=user_id,
+        user_id=current_user_id,
         tag_id=tag_id,
         problem_id=problem_id
     )
@@ -44,10 +47,11 @@ def create_solution():
     db.session.commit()  # ✅ Commit first to get the ID
 
     # Send Notification only if another user posts the solution
-    if user_id != problem.user_id:
+    if current_user_id != problem.user_id:
         create_notification(
             user_id=problem.user_id,
-            message="Someone provided a solution to your problem! ✅",
+            actor_id=current_user_id,
+            message="Someone provided a solution to your problem!",
             type="reply",
             reference_id=new_solution.id  # ✅ Now the ID exists
         )
@@ -60,17 +64,18 @@ def create_solution():
 
 # Updating
 @solution_bp.route('/solutions/<int:solution_id>', methods=['PUT'])
+@jwt_required()
 def update_solution(solution_id):
+    current_user_id = get_jwt_identity()
     solution = Solution.query.get_or_404(solution_id)
     data = request.get_json()
 
     # Extracting values from data
-    user_id = data.get('user_id', solution.user_id)
     description = data.get('description', solution.description)
     tag_id = data.get('tag_id', solution.tag_id)
     problem_id = data.get('problem_id', solution.problem_id)
 
-    check_description = Problem.query.filter_by(description=description).first()
+    check_description = Solution.query.filter_by(description=description).first()
 
     if check_description:
         return jsonify({"error": "Solution exists"}), 406
@@ -79,7 +84,6 @@ def update_solution(solution_id):
 
     # Update problem details
     solution.description = description
-    solution.user_id = user_id
     solution.tag_id = tag_id
     solution.problem_id = problem_id
 
@@ -154,3 +158,24 @@ def get_votes_for_solution(solution_id):
         return jsonify({'message': 'Solution not found'}), 404
 
     return jsonify(solution.get_vote_counts()), 200
+
+
+# DELETE
+@solution_bp.route("/solutions/<int:solution_id>", methods=["DELETE"])
+@jwt_required()
+def delete_problem(solution_id):
+    current_user_id = get_jwt_identity()
+    solution = Solution.query.get(solution_id)
+    if not solution:
+        return jsonify({"error": "Solution not found"}), 406
+
+    # Restrict deletion to the problem owner
+    if solution.user_id != current_user_id:
+        return jsonify({"error": "You are not authorized to delete this problem"}), 403
+
+
+
+    db.session.delete(solution)
+    db.session.commit()
+    return jsonify({"success": "Solution deleted successfully"}), 200
+

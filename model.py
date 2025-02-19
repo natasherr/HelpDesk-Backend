@@ -18,8 +18,7 @@ class User(db.Model):
     problems = db.relationship('Problem', backref='author', lazy=True)  
     solutions = db.relationship('Solution', backref='author', lazy=True)  
     votes = db.relationship('Vote', backref='user', lazy=True)
-    notifications = db.relationship('Notification', backref='user', lazy=True)
-
+    
 class Problem(db.Model):
     __tablename__ = 'problems'
     id = db.Column(db.Integer, primary_key=True)
@@ -64,12 +63,17 @@ class Vote(db.Model):
 class Notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Notification recipient
+    actor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # User who performed the action
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50), nullable=False)  # e.g., 'vote', 'reply'
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     reference_id = db.Column(db.Integer)  # Optional: ID of related entity (e.g., solution_id)
+
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='notifications')  # Notification recipient
+    actor = db.relationship('User', foreign_keys=[actor_id])  # User who performed the action
 
 class Faq(db.Model):
     __tablename__ = 'faqs'

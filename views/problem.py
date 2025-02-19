@@ -1,14 +1,16 @@
 from flask import jsonify, request, Blueprint
 from model import db, Problem
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 problem_bp =Blueprint("problem_bp", __name__)
 
 
 @problem_bp.route("/problems", methods=["POST"])
+@jwt_required()
 def add_problem():
+    current_user_id = get_jwt_identity()
     data = request.get_json()
     description = data['description']
-    user_id = data['user_id']
     tag_id = data['tag_id']
 
     if not description:
@@ -20,7 +22,7 @@ def add_problem():
         return jsonify({"error":"Problem exists"}),406
 
     else:
-        new_problem = Problem(description=description, user_id=user_id, tag_id=tag_id )
+        new_problem = Problem(description=description, user_id=current_user_id, tag_id=tag_id )
         db.session.add(new_problem)
         db.session.commit()
         return jsonify({"success":"Problem added successfully"}), 201
@@ -30,12 +32,18 @@ def add_problem():
 
 
 @problem_bp.route('/problems/<int:problem_id>', methods=['PUT'])
+@jwt_required()
 def update_problem(problem_id):
+    current_user_id = get_jwt_identity()
     problem = Problem.query.get_or_404(problem_id)
+
+    # Restrict update to the problem owner
+    if problem.user_id != current_user_id:
+        return jsonify({"error": "You are not authorized to edit this problem"}), 403
+
     data = request.get_json()
 
     # Extracting values from data
-    user_id = data.get('user_id', problem.user_id)
     description = data.get('description', problem.description)
     tag_id = data.get('tag_id', problem.tag_id)
 
@@ -47,7 +55,6 @@ def update_problem(problem_id):
 
     # Update problem details
     problem.description = description
-    problem.user_id = user_id
     problem.tag_id = tag_id
 
     db.session.commit()
@@ -57,10 +64,17 @@ def update_problem(problem_id):
 
 # DELETE
 @problem_bp.route("/problems/<int:problem_id>", methods=["DELETE"])
+@jwt_required()
 def delete_problem(problem_id):
+    current_user_id = get_jwt_identity()
     problem = Problem.query.get(problem_id)
     if not problem:
         return jsonify({"error": "Problem not found"}), 406
+
+    # Restrict deletion to the problem owner
+    if problem.user_id != current_user_id:
+        return jsonify({"error": "You are not authorized to delete this problem"}), 403
+
 
 
     db.session.delete(problem)
