@@ -6,7 +6,18 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 user_bp =Blueprint("user_bp", __name__)
 
 
-# Add user
+# fetch users
+@user_bp.route("/users", methods=["GET"])
+def fetch_users():
+    users = User.query.all()
+    user_list = []
+    for user in users:
+        user_list.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email
+        })
+    return jsonify(user_list)
 
 # Add user
 @user_bp.route("/users", methods=["POST"])
