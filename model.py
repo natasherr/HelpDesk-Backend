@@ -14,9 +14,8 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(512), nullable=False)
-    # Relationships
-    problems = db.relationship('Problem', backref='author', lazy=True)  
-    solutions = db.relationship('Solution', backref='author', lazy=True)  
+    
+    # Relationships   
     votes = db.relationship('Vote', backref='user', lazy=True)
     
 class Problem(db.Model):
@@ -27,6 +26,7 @@ class Problem(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)
     # Relationships
     solutions = db.relationship('Solution', backref='problem', lazy=True)
+    user = db.relationship('User', backref='problems')
 
 class Tag(db.Model):
     __tablename__ = 'tags'
@@ -45,6 +45,7 @@ class Solution(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)  # New relationship
     # Relationships
     votes = db.relationship('Vote', backref='solution', lazy=True)
+    user = db.relationship('User', backref='solutions')
 
     def get_vote_counts(self):
         likes = Vote.query.filter_by(solution_id=self.id, vote_type=1).count()

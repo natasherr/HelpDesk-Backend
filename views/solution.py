@@ -124,7 +124,11 @@ def get_solutions():
         'user_id': s.user_id,
         'problem_id': s.problem_id,
         'description': s.description,
-        'tag_id': s.tag_id
+        'tag_id': s.tag_id,
+        'user': {
+                "id": s.user.id,
+                "username": s.user.username,
+            }
     } for s in solutions.items]
 
     return jsonify({
@@ -147,6 +151,10 @@ def get_solution(solution_id):
         'user_id': solution.user_id,
         'tag_id': solution.tag_id,
         'problem_id': solution.problem_id,
+        'user': {
+                "id": solution.user.id,
+                "username": solution.user.username,
+            }
     }), 200
 
 

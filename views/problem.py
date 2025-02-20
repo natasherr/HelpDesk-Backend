@@ -1,5 +1,5 @@
 from flask import jsonify, request, Blueprint
-from model import db, Problem
+from model import db, Problem, User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 problem_bp =Blueprint("problem_bp", __name__)
@@ -84,18 +84,28 @@ def delete_problem(problem_id):
 
 
 
-# Get all problems (with pagination)
 @problem_bp.route('/problems', methods=['GET'])
 def get_problems():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
-    problems = Problem.query.paginate(page=page, per_page=per_page)
+
+    
+    problems = Problem.query.join(User).add_columns(
+        Problem.id, Problem.description, Problem.tag_id, Problem.user_id,
+        User.username.label("username")
+    ).paginate(page=page, per_page=per_page)
+
+    
     problems_data = [{
         'id': p.id,
         'description': p.description,
-        'user_id': p.user_id,
         'tag_id': p.tag_id,
+        'user': {
+            "id": p.user_id,
+            "username": p.username,  
+        }
     } for p in problems.items]
+
     return jsonify({
         'problems': problems_data,
         'total_pages': problems.pages,
