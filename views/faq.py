@@ -4,7 +4,7 @@ faq_bp =Blueprint("faq_bp", __name__)
 
 
 
-
+#  Add FAQ
 @faq_bp.route("/faqs", methods=["POST"])
 def add_faqs():
     data = request.get_json()
@@ -24,7 +24,7 @@ def add_faqs():
 
 
 
-# READ - Get All Tags
+# Fetch FAQ
 @faq_bp.route("/faqs", methods=["GET"])
 def get_faqs():
     faqs = Faq.query.all()
@@ -34,7 +34,7 @@ def get_faqs():
 
 
 
-
+# Update FAQ
 @faq_bp.route("/faqs/<int:faq_id>", methods=["PUT"])
 def update_faqs(faq_id):
     data = request.get_json()
@@ -63,7 +63,7 @@ def update_faqs(faq_id):
 
 
 
-# DELETE
+# DELETE FAQ
 @faq_bp.route("/faqs/<int:faq_id>", methods=["DELETE"])
 def delete_faq(faq_id):
     faq = Faq.query.get(faq_id)
