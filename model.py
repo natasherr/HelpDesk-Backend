@@ -14,12 +14,10 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(512), nullable=False)
-    # Relationships
-    problems = db.relationship('Problem', backref='author', lazy=True)  
-    solutions = db.relationship('Solution', backref='author', lazy=True)  
+    
+    # Relationships   
     votes = db.relationship('Vote', backref='user', lazy=True)
-    notifications = db.relationship('Notification', backref='user', lazy=True)
-
+    
 class Problem(db.Model):
     __tablename__ = 'problems'
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +26,7 @@ class Problem(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)
     # Relationships
     solutions = db.relationship('Solution', backref='problem', lazy=True)
+    user = db.relationship('User', backref='problems')
 
 class Tag(db.Model):
     __tablename__ = 'tags'
@@ -46,6 +45,7 @@ class Solution(db.Model):
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)  # New relationship
     # Relationships
     votes = db.relationship('Vote', backref='solution', lazy=True)
+    user = db.relationship('User', backref='solutions')
 
     def get_vote_counts(self):
         likes = Vote.query.filter_by(solution_id=self.id, vote_type=1).count()
@@ -64,12 +64,17 @@ class Vote(db.Model):
 class Notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Notification recipient
+    actor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # User who performed the action
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50), nullable=False)  # e.g., 'vote', 'reply'
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     reference_id = db.Column(db.Integer)  # Optional: ID of related entity (e.g., solution_id)
+
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='notifications')  # Notification recipient
+    actor = db.relationship('User', foreign_keys=[actor_id])  # User who performed the action
 
 class Faq(db.Model):
     __tablename__ = 'faqs'
