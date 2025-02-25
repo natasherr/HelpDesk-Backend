@@ -1,8 +1,8 @@
-"""Initial migration.
+"""added the column for github id and google id
 
-Revision ID: cd117b777187
+Revision ID: 308cc30e877a
 Revises: 
-Create Date: 2025-02-19 21:21:31.515201
+Create Date: 2025-02-22 22:01:03.192682
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cd117b777187'
+revision = '308cc30e877a'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,8 +44,13 @@ def upgrade():
     sa.Column('username', sa.String(length=80), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('password', sa.String(length=512), nullable=False),
+    sa.Column('github_id', sa.String(length=120), nullable=True),
+    sa.Column('google_id', sa.String(length=120), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('github_id'),
+    sa.UniqueConstraint('google_id'),
     sa.UniqueConstraint('username')
     )
     op.create_table('notifications',

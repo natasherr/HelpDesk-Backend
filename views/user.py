@@ -1,9 +1,14 @@
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request,redirect,url_for,session
 from model import User,db
+from app import app, mail
+from flask_mail import Message
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_dance.contrib.github import make_github_blueprint, github
+from flask_dance.contrib.google import make_google_blueprint, google
+from flask import Blueprint
 
-user_bp =Blueprint("user_bp", __name__)
+user_bp = Blueprint("user_bp", __name__)
 
 
 # fetch users
@@ -40,8 +45,17 @@ def add_users():
         new_user = User(username=username, email=email, password=password)
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"success": "Added successfully"}), 201
-    
+        try:
+            msg = Message(
+                subject='Hello from the other side!',
+                sender=app.config['MAIL_USERNAME'],  # Explicit sender
+                recipients=['eugeneodera59@gmail.com']
+            )
+            msg.body = "Hey Samson, sending you this email from my Flask app, lmk if it works."
+            mail.send(msg)
+            return "Message sent successfully!"
+        except Exception as e:
+            return f"An error occurred: {e}"
 
 
 

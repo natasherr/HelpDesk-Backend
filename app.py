@@ -4,12 +4,13 @@ from model import db, TokenBlocklist
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from flask_cors import CORS
-from authlib.integrations.flask_client import OAuth
+from flask_mail import Mail
+import os
+
 
 
 app = Flask(__name__)
 
-oauth = OAuth(app)
 
 CORS(app)
 # migration initialization
@@ -18,10 +19,8 @@ migrate = Migrate(app, db)
 db.init_app(app)
 
 
-# social
-app.config['GITHUB_CLIENT_ID'] = "Ov23liRe9UJhRA4BjO11"
-app.config['GITHUB_CLIENT_SECRET'] = "d3de645cc97f0e25080388028ef5385173f0ed93"
 
+app.config["SECRET_KEY"] = os.getenv('SECRET_KEY', 'afdgerettyiyuofdbnghj45456')
 
 
 # Jwt
@@ -31,6 +30,31 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] =  timedelta(hours=1)
 jwt = JWTManager(app)
 jwt.init_app(app)
 
+
+# Flask mail configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'brian.joseph1@student.moringaschool.com'  # Use a simpler environment variable key
+app.config['MAIL_PASSWORD'] ='cmsn nasd akip pdkw'  # Use a simpler environment variable key
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']  # Default sender
+
+mail = Mail(app)
+
+# @app.route("/")
+# def index():
+#     try:
+#         msg = Message(
+#             subject='Hello from the other side!',
+#             sender=app.config['MAIL_USERNAME'],  # Explicit sender
+#             recipients=['eugeneodera59@gmail.com']
+#         )
+#         msg.body = "Hey Samson, sending you this email from my Flask app, lmk if it works."
+#         mail.send(msg)
+#         return "Message sent successfully!"
+#     except Exception as e:
+#         return f"An error occurred: {e}"
 
 
 from views import *
@@ -52,9 +76,6 @@ def check_if_token_revoked(jwt_header, jwt_payload: dict) -> bool:
     token = db.session.query(TokenBlocklist.id).filter_by(jti=jti).scalar()
 
     return token is not None
-
-
-
 
 
 

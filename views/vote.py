@@ -51,7 +51,7 @@ def create_or_update_vote(solution_id):
 
     # **Send Notification Only If the Voter is Not the Owner**
     if current_user_id != solution.user_id:
-        message = "Your solution received a like!" if vote_type == 1 else "Your solution received a dislike!"
+        message = "Liked your solution!" if vote_type == 1 else "Disliked your solution!"
         create_notification(
             user_id=solution.user_id,
             actor_id=current_user_id,
@@ -62,6 +62,7 @@ def create_or_update_vote(solution_id):
 
     db.session.commit()
     return jsonify({'message': 'Vote recorded successfully'}), 201
+
 
 
 # DELETE
@@ -82,4 +83,17 @@ def delete_vote(vote_id):
     db.session.delete(vote)
     db.session.commit()
     return jsonify({"success": "Vote deleted successfully"}), 200
+
+
+@vote_bp.route('/votes', methods=['GET'])
+@jwt_required()
+def get_solutions():
+    current_user_id = get_jwt_identity()
+    votes = Vote.query.all()
+    
+    vote_list = [{"id": vote.id, "vote_type": vote.vote_type} for vote in votes]
+
+    return jsonify(vote_list)
+    
+
 
