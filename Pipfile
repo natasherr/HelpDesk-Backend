@@ -11,6 +11,11 @@ flask-jwt-extended = "*"
 flask-cors = "*"
 authlib = "*"
 requests = "*"
+python-dotenv = "*"
+flask-session = "*"
+flask-login = "*"
+flask-dance = "*"
+flask-mail = "*"
 
 [dev-packages]
 
