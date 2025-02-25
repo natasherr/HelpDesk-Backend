@@ -85,15 +85,7 @@ def delete_vote(vote_id):
     return jsonify({"success": "Vote deleted successfully"}), 200
 
 
-@vote_bp.route('/votes', methods=['GET'])
-@jwt_required()
-def get_solutions():
-    current_user_id = get_jwt_identity()
-    votes = Vote.query.all()
-    
-    vote_list = [{"id": vote.id, "vote_type": vote.vote_type} for vote in votes]
 
-    return jsonify(vote_list)
     
 
 
