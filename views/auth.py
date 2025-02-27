@@ -6,11 +6,7 @@ from datetime import timedelta
 from datetime import timezone
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 
-
-
-
 auth_bp = Blueprint("auth_bp", __name__)
-
 
 # Login
 @auth_bp.route("/login", methods=["POST"])
@@ -29,7 +25,27 @@ def login():
         access_token = create_access_token(identity=user.id)
         return jsonify({"access_token": access_token}), 200
 
-    return jsonify({"error": "Either email or password is incorrect"}),
+    return jsonify({"error": "Either email or password is incorrect"})
+
+
+# Login with google
+@auth_bp.route("/login_with_google", methods=["POST"])
+def login_with_google():
+    data = request.get_json()
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    email = data["email"]
+
+    user = User.query.filter_by(email=email).first()
+
+    if user :
+        access_token = create_access_token(identity=user.id)
+        return jsonify({"access_token": access_token}), 200
+
+    return jsonify({"error": "Email is incorrect"})
 
 
 # current user
