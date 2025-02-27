@@ -51,7 +51,7 @@ def create_solution():
         create_notification(
             user_id=problem.user_id,
             actor_id=current_user_id,
-            message="Provided solution to your problem!",
+            message="Someone provided a solution to your problem!",
             type="reply",
             reference_id=new_solution.id  # ✅ Now the ID exists
         )

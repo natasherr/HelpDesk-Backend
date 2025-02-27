@@ -1,10 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from datetime import datetime
-
+from sqlalchemy.sql import func
+from sqlalchemy.sql import select
 
 metadata = MetaData()
-
 db = SQLAlchemy(metadata=metadata)
 
 
@@ -14,10 +14,11 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(512), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     
     # Relationships   
     votes = db.relationship('Vote', backref='user', lazy=True)
+    
     
 class Problem(db.Model):
     __tablename__ = 'problems'
@@ -25,17 +26,23 @@ class Problem(db.Model):
     description = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     # Relationships
-    solutions = db.relationship('Solution', backref='problem', lazy=True)
+    solutions = db.relationship("Solution", back_populates="problem", cascade="all, delete-orphan")
     user = db.relationship('User', backref='problems')
+    tag = db.relationship("Tag", back_populates="problems", lazy="joined")
+
 
 class Tag(db.Model):
     __tablename__ = 'tags'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    # Relationships
-    solutions = db.relationship('Solution', backref='tag', lazy=True)
-    problems = db.relationship('Problem', backref='tag', lazy=True)
+    
+    # Relationship
+    solutions = db.relationship('Solution', back_populates='tag', lazy=True)
+    problems = db.relationship('Problem', back_populates='tag', lazy=True)
+
 
 class Solution(db.Model):
     __tablename__ = 'solutions'
@@ -43,15 +50,23 @@ class Solution(db.Model):
     description = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     problem_id = db.Column(db.Integer, db.ForeignKey('problems.id'), nullable=False)
-    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)  # New relationship
-    # Relationships
+    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  
+    
+    # Relationship
+    tag = db.relationship("Tag", back_populates="solutions")
     votes = db.relationship('Vote', backref='solution', lazy=True)
     user = db.relationship('User', backref='solutions')
+    problem = db.relationship("Problem", back_populates="solutions")
 
     def get_vote_counts(self):
-        likes = Vote.query.filter_by(solution_id=self.id, vote_type=1).count()
-        dislikes = Vote.query.filter_by(solution_id=self.id, vote_type=-1).count()
-        return {'likes': likes, 'dislikes': dislikes}
+        vote_counts = db.session.query(
+            func.sum(func.case([(Vote.vote_type == 1, 1)], else_=0)).label("likes"),
+            func.sum(func.case([(Vote.vote_type == -1, 1)], else_=0)).label("dislikes")
+        ).filter(Vote.solution_id == self.id).first()
+        
+        return {'likes': vote_counts.likes or 0, 'dislikes': vote_counts.dislikes or 0}
+
 
 class Vote(db.Model):
     __tablename__ = 'votes'
@@ -61,7 +76,7 @@ class Vote(db.Model):
     vote_type = db.Column(db.Integer, nullable=False)  # 1 for like, -1 for dislike
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    
+
 class Notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
@@ -77,15 +92,15 @@ class Notification(db.Model):
     user = db.relationship('User', foreign_keys=[user_id], backref='notifications')  # Notification recipient
     actor = db.relationship('User', foreign_keys=[actor_id])  # User who performed the action
 
+
 class Faq(db.Model):
     __tablename__ = 'faqs'
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.String(300), nullable=False)
     answer = db.Column(db.Text, nullable=False)
     
-    def _repr_(self):
+    def __repr__(self):
         return f"<FAQ {self.question} {self.answer}>"
-
 
 
 class TokenBlocklist(db.Model):

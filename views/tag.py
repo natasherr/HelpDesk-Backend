@@ -26,12 +26,38 @@ def add_tag():
 
 
 
+
 # READ - Get All Tags
 @tag_bp.route("/tags", methods=["GET"])
 def get_tags():
     tags = Tag.query.all()
     tags_list = [{"id": tag.id, "name": tag.name} for tag in tags]
     return jsonify(tags_list), 200
+
+
+# Read - Get tad solution
+@tag_bp.route("/tags/<int:tag_id>/solutions", methods=["GET"])
+def get_solutions_by_tag(tag_id):
+    tag = Tag.query.get(tag_id)
+    
+    if not tag:
+        return jsonify({"error": "Tag not found"}), 404
+
+    solutions_list = [
+        {
+            "id": solution.id,
+            "description": solution.description,
+            "problem": {
+                "id": solution.problem.id,
+                "description": solution.problem.description
+            } if solution.problem else None
+        }
+        for solution in tag.solutions  # Fetching only solutions related to this tag
+    ]
+
+    return jsonify(solutions_list), 200
+
+
 
 # Read - Get Tag by ID
 @tag_bp.route("/tags/<int:tag_id>", methods=["GET"])
@@ -40,6 +66,7 @@ def get_tag(tag_id):
     if not tag:
         return jsonify({"error": "Tag not found"}), 406
     return jsonify({"id": tag.id, "name": tag.name}), 200
+
 
 
 

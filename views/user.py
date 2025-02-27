@@ -4,8 +4,6 @@ from app import app, mail
 from flask_mail import Message
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_dance.contrib.github import make_github_blueprint, github
-from flask_dance.contrib.google import make_google_blueprint, google
 from flask import Blueprint
 
 user_bp = Blueprint("user_bp", __name__)
