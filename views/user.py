@@ -4,12 +4,9 @@ from app import app, mail
 from flask_mail import Message
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_dance.contrib.github import make_github_blueprint, github
-from flask_dance.contrib.google import make_google_blueprint, google
 from flask import Blueprint
 
 user_bp = Blueprint("user_bp", __name__)
-
 
 # fetch users
 @user_bp.route("/users", methods=["GET"])
@@ -28,35 +25,50 @@ def fetch_users():
 @user_bp.route("/users", methods=["POST"])
 def add_users():
     data = request.get_json()
+
+    # Validate input data
+    if not data or 'username' not in data or 'email' not in data or 'password' not in data:
+        return jsonify({"error": "Missing required fields"}), 400
+
     username = data['username']
     email = data['email']
-    password = generate_password_hash(data['password']) 
+    password = generate_password_hash(data['password'])
 
     check_username = User.query.filter_by(username=username).first()
     check_email = User.query.filter_by(email=email).first()
 
-    # print("Email", check_email)
-    # print("Username", check_username)
-
     if check_username or check_email:
-        return jsonify({"error":"Username/email exists"}), 404
+        return jsonify({"error": "Username/email already exists"}), 409
 
-    else:
-        new_user = User(username=username, email=email, password=password)
-        db.session.add(new_user)
+    new_user = User(username=username, email=email, password=password, profile_picture=profile_picture)
+    db.session.add(new_user)
+
+    try:
         db.session.commit()
-        try:
-            msg = Message(
-                subject='Hello from the other side!',
-                sender=app.config['MAIL_USERNAME'],  # Explicit sender
-                recipients=['eugeneodera59@gmail.com']
-            )
-            msg.body = "Hey Samson, sending you this email from my Flask app, lmk if it works."
-            mail.send(msg)
-            return "Message sent successfully!"
-        except Exception as e:
-            return f"An error occurred: {e}"
+        
+        msg = Message(
+            subject=f'🎉 Welcome to HelpDesk, {username}! 🎉',
+            sender=app.config["MAIL_DEFAULT_SENDER"], 
+            recipients=[email],
+            html=f"""
+            <html>
+                <body>
+                    <h1 style="color: #4CAF50;">Hello {username}!</h1>
+                    <p>🌟 Welcome to HelpDesk! 🌟</p>
+                    <p>This is where all your queries will be solved. Feel free to ask any questions you have and don't hesitate to interact with our amazing community!</p>
+                    <p>As always, keep it interesting, fun, fruitful, and respectful!</p>
+                    <p>We're thrilled to have you on board! 🎊</p>
+                    <p>Best Regards,<br>Your HelpDesk Team</p>
+                </body>
+            </html>
+            """
+        )
+        mail.send(msg)
+        return jsonify({"success": "User  created successfully!"}), 201
 
+    except Exception as e:
+        db.session.rollback()  # Rollback the session in case of an error
+        return jsonify({"error": f"Failed to create user: {str(e)}"}), 500
 
 
 # Update User
