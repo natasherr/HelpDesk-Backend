@@ -67,6 +67,7 @@ app.register_blueprint(problem_bp)
 app.register_blueprint(solution_bp)
 app.register_blueprint(tag_bp)
 app.register_blueprint(vote_bp)
+app.register_blueprint(subscription_bp)
 
 
 

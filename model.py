@@ -3,9 +3,12 @@ from sqlalchemy import MetaData
 from datetime import datetime
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
+from sqlalchemy import func
+from sqlalchemy import case
 
 metadata = MetaData()
 db = SQLAlchemy(metadata=metadata)
+
 
 
 class User(db.Model):
@@ -18,6 +21,8 @@ class User(db.Model):
     
     # Relationships   
     votes = db.relationship('Vote', backref='user', lazy=True)
+    subscriptions = db.relationship('Subscription', backref='user', lazy=True)  # Added for follow/subscription feature
+
     
     
 class Problem(db.Model):
@@ -32,6 +37,7 @@ class Problem(db.Model):
     solutions = db.relationship("Solution", back_populates="problem", cascade="all, delete-orphan")
     user = db.relationship('User', backref='problems')
     tag = db.relationship("Tag", back_populates="problems", lazy="joined")
+    subscriptions = db.relationship('Subscription', backref='problem', lazy=True)  # Added for follow/subscription feature
 
 
 class Tag(db.Model):
@@ -61,11 +67,15 @@ class Solution(db.Model):
 
     def get_vote_counts(self):
         vote_counts = db.session.query(
-            func.sum(func.case([(Vote.vote_type == 1, 1)], else_=0)).label("likes"),
-            func.sum(func.case([(Vote.vote_type == -1, 1)], else_=0)).label("dislikes")
+            func.sum(case((Vote.vote_type == 1, 1), else_=0)).label("likes"),
+            func.sum(case((Vote.vote_type == -1, 1), else_=0)).label("dislikes")
         ).filter(Vote.solution_id == self.id).first()
-        
-        return {'likes': vote_counts.likes or 0, 'dislikes': vote_counts.dislikes or 0}
+
+        return {
+            "likes": vote_counts.likes or 0,
+            "dislikes": vote_counts.dislikes or 0
+        }
+
 
 
 class Vote(db.Model):
@@ -93,6 +103,18 @@ class Notification(db.Model):
     actor = db.relationship('User', foreign_keys=[actor_id])  # User who performed the action
 
 
+class Subscription(db.Model):
+    __tablename__ = 'subscriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    problem_id = db.Column(db.Integer, db.ForeignKey('problems.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Add a unique constraint to ensure a user can only subscribe to a problem once
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'problem_id', name='unique_user_problem_subscription'),
+    )
+
 class Faq(db.Model):
     __tablename__ = 'faqs'
     id = db.Column(db.Integer, primary_key=True)
@@ -107,3 +129,5 @@ class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, index=True)
     created_at = db.Column(db.DateTime, nullable=False)
+
+

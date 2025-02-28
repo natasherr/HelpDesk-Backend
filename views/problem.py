@@ -133,4 +133,3 @@ def get_problem(problem_id):
         'tag_id': problem.tag_id,
     }), 200
 
-    

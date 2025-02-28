@@ -6,3 +6,4 @@ from .solution import *
 from .tag import *
 from .vote import *
 from .auth import *
+from .subscription import *

@@ -1,5 +1,5 @@
 from flask import jsonify, request, Blueprint
-from model import db, Solution, Problem, Notification
+from model import db, Solution, Problem, Notification, Subscription
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 solution_bp =Blueprint("solution_bp", __name__)
@@ -18,24 +18,22 @@ def create_notification(user_id, actor_id, message, type, reference_id=None):
         reference_id=reference_id
     )
     db.session.add(notification)
-    db.session.commit()
 
 
-# Create a Solution
 @solution_bp.route('/solutions', methods=['POST'])
 @jwt_required()
 def create_solution():
     current_user_id = get_jwt_identity()
     data = request.get_json()
-    description = data['description']
-    tag_id = data['tag_id']
-    problem_id = data['problem_id']
-    
+    description = data.get('description')
+    tag_id = data.get('tag_id')
+    problem_id = data.get('problem_id')
+
     # Check if the problem exists
     problem = Problem.query.get(problem_id)
     if not problem:
         return jsonify({'message': 'Problem not found'}), 404
-    
+
     # Create Solution
     new_solution = Solution(
         description=description,
@@ -44,21 +42,33 @@ def create_solution():
         problem_id=problem_id
     )
     db.session.add(new_solution)
-    db.session.commit()  # ✅ Commit first to get the ID
+    db.session.flush()  # Flush to get the ID without committing
 
-    # Send Notification only if another user posts the solution
+    # Notify the problem owner (if the owner is not the solution author)
     if current_user_id != problem.user_id:
         create_notification(
             user_id=problem.user_id,
             actor_id=current_user_id,
             message="Someone provided a solution to your problem!",
             type="reply",
-            reference_id=new_solution.id  # ✅ Now the ID exists
+            reference_id=new_solution.id
         )
 
+    # Notify all subscribers (excluding the problem owner and the solution author)
+    subscriptions = Subscription.query.filter_by(problem_id=problem_id).all()
+    for subscription in subscriptions:
+        if subscription.user_id != problem.user_id and subscription.user_id != current_user_id:
+            create_notification(
+                user_id=subscription.user_id,
+                actor_id=current_user_id,
+                message=f"Your subscribed question received a solution: {problem.description}",
+                type="subscribed_solution",
+                reference_id=new_solution.id
+            )
+
+    db.session.commit()  # Commit all changes (solution + notifications)
+
     return jsonify({'message': 'Solution created successfully'}), 201
-
-
 
 
 
@@ -136,8 +146,7 @@ def get_solutions():
         'total_pages': solutions.pages,
         'current_page': solutions.page,
         'total_solutions': solutions.total
-    }), 200
-
+    }), 
 
 
 
