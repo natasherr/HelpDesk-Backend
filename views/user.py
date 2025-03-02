@@ -40,7 +40,7 @@ def add_users():
     if check_username or check_email:
         return jsonify({"error": "Username/email already exists"}), 409
 
-    new_user = User(username=username, email=email, password=password, profile_picture=profile_picture)
+    new_user = User(username=username, email=email, password=password)
     db.session.add(new_user)
 
     try:
