@@ -6,6 +6,7 @@ from sqlalchemy.sql import select
 from sqlalchemy import func
 from sqlalchemy import case
 
+
 metadata = MetaData()
 db = SQLAlchemy(metadata=metadata)
 
@@ -36,7 +37,7 @@ class Problem(db.Model):
     # Relationships
     solutions = db.relationship("Solution", back_populates="problem", cascade="all, delete-orphan")
     user = db.relationship('User', backref='problems')
-    tag = db.relationship("Tag", back_populates="problems", lazy="joined")
+    tag = db.relationship("Tag", back_populates="problems")
     subscriptions = db.relationship('Subscription', backref='problem', lazy=True)  # Added for follow/subscription feature
 
 
@@ -61,7 +62,7 @@ class Solution(db.Model):
     
     # Relationship
     tag = db.relationship("Tag", back_populates="solutions")
-    votes = db.relationship('Vote', backref='solution', lazy=True)
+    votes = db.relationship('Vote', backref='solution', cascade="all, delete-orphan")
     user = db.relationship('User', backref='solutions')
     problem = db.relationship("Problem", back_populates="solutions")
 
@@ -97,6 +98,7 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     reference_id = db.Column(db.Integer)  # Optional: ID of related entity (e.g., solution_id)
+    solution_description = db.Column(db.Text)
 
     # Relationships
     user = db.relationship('User', foreign_keys=[user_id], backref='notifications')  # Notification recipient

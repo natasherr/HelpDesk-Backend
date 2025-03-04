@@ -16,6 +16,7 @@ flask-session = "*"
 flask-login = "*"
 flask-dance = "*"
 flask-mail = "*"
+flask-caching = "*"
 
 [dev-packages]
 

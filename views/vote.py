@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 vote_bp = Blueprint("vote_bp", __name__)
 
 
-def create_notification(user_id, actor_id, message, type, reference_id=None):
+def create_notification(user_id, actor_id, message, type, reference_id=None, solution_description=None):
     """
     Helper function to create a notification.
     """
@@ -14,7 +14,8 @@ def create_notification(user_id, actor_id, message, type, reference_id=None):
         actor_id=actor_id,
         message=message,
         type=type,
-        reference_id=reference_id
+        reference_id=reference_id,
+        solution_description=solution_description  # Include solution description
     )
     db.session.add(notification)
 
@@ -35,6 +36,7 @@ def create_or_update_vote(solution_id):
         return jsonify({'message': 'Invalid vote type. Use 1 for like or -1 for dislike.'}), 400
 
     # Check if the solution exists
+    # Fetch the solution
     solution = Solution.query.get(solution_id)
     if not solution:
         return jsonify({'message': 'Solution not found'}), 404
@@ -45,21 +47,25 @@ def create_or_update_vote(solution_id):
     if existing_vote:
         # If the user already voted, update the vote type
         existing_vote.vote_type = vote_type
-        message = "Updated vote on your solution!" if current_user_id != solution.user_id else None
+        message = f"Updated vote on your solution to the problem '{solution.problem.description}'."
     else:
         # Otherwise, create a new vote
         new_vote = Vote(user_id=current_user_id, solution_id=solution_id, vote_type=vote_type)
         db.session.add(new_vote)
-        message = "Liked your solution!" if vote_type == 1 else "Disliked your solution!"
+        if vote_type == 1:
+            message = f"Your solution to the problem '{solution.problem.description}' received a like: {solution.description}"
+        else:
+            message = f"Your solution to the problem '{solution.problem.description}' received a dislike: {solution.description}"
 
     # Send notification only if the voter is not the owner
     if current_user_id != solution.user_id and message:
         create_notification(
-            user_id=solution.user_id,
-            actor_id=current_user_id,
+            user_id=solution.user_id,  # Notify the solution owner
+            actor_id=current_user_id,  # The user who voted
             message=message,
             type="vote",
-            reference_id=solution.id
+            reference_id=solution.id,
+            solution_description=solution.description  # Include the solution description
         )
 
     db.session.commit()

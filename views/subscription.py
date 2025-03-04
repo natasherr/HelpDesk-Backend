@@ -93,3 +93,15 @@ def get_subscriptions():
         })
 
     return jsonify(subscriptions_data), 200
+
+
+
+@subscription_bp.route('/subscription-status/<int:problem_id>', methods=['GET'])
+@jwt_required()
+def subscription_status(problem_id):
+    current_user_id = get_jwt_identity()
+
+    # Check if the user is subscribed
+    is_subscribed = Subscription.query.filter_by(user_id=current_user_id, problem_id=problem_id).first() is not None
+
+    return jsonify({"subscribed": is_subscribed}), 200

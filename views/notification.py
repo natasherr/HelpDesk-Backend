@@ -25,6 +25,7 @@ def get_notifications():
         'type': n.type,
         'is_read': n.is_read,
         'created_at': n.created_at,
+        'solution_description': n.solution_description,
         'actor': {  # Include details of the user who performed the action
             "id": n.actor.id,
             "username": n.actor.username
@@ -46,11 +47,21 @@ def mark_notification_read(notification_id):
     current_user_id = get_jwt_identity()
     notification = Notification.query.get(notification_id)
     if not notification:
-        return jsonify({'message': 'Notification not found'}), 404
+        return jsonify({'error': 'Notification not found'}), 404
 
     notification.is_read = True
     db.session.commit()
     return jsonify({'message': 'Notification marked as read'}), 200
+
+
+
+@notification_bp.route("/notifications/unread", methods=["GET"])
+@jwt_required()
+def get_unread_notifications():
+    user_id = get_jwt_identity()  # Get logged-in user ID
+    unread_count = Notification.query.filter_by(user_id=user_id, is_read=False).count()
+    return jsonify({"unread_notifications": unread_count})
+
 
 # Delete a notification
 @notification_bp.route('/notifications/<int:notification_id>', methods=['DELETE'])

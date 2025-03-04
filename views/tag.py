@@ -57,6 +57,29 @@ def get_solutions_by_tag(tag_id):
 
     return jsonify(solutions_list), 200
 
+# Fetching similar questions using their tags
+@tag_bp.route("/tags/<int:tag_id>/problems", methods=["GET"])
+def get_problems_by_tag(tag_id):
+    tag = Tag.query.get(tag_id)
+
+    if not tag:
+        return jsonify({"error": "Tag not found"}), 404
+
+    problems_list = [
+        {
+            "id": problem.id,
+            "description": problem.description,
+            "solutions": [
+                {
+                    "id": solution.id,
+                    "description": solution.description
+                } for solution in problem.solutions  # Iterate over the list of solutions
+            ] if problem.solutions else []  # Return an empty list if there are no solutions
+        }
+        for problem in tag.problems
+    ]
+
+    return jsonify(problems_list), 200
 
 
 # Read - Get Tag by ID

@@ -9,6 +9,7 @@ import os
 
 
 
+
 app = Flask(__name__)
 
 
@@ -29,6 +30,8 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] =  timedelta(hours=1)
 
 jwt = JWTManager(app)
 jwt.init_app(app)
+
+
 
 
 # Flask mail configuration
