@@ -1,7 +1,11 @@
 {
     "_meta": {
         "hash": {
+<<<<<<< HEAD:Pipfile.lock
             "sha256": "49f582b628df28993955d4958abd3e67e5c2f8760ea5a2375bba1c14b8910da4"
+=======
+            "sha256": "77a76fa89624a3e539222a955f5efea7d5bcb2779422cdcb86e85143c7f19780"
+>>>>>>> ft-backend:backend/Pipfile.lock
         },
         "pipfile-spec": 6,
         "requires": {
@@ -619,6 +623,7 @@
             "markers": "python_version >= '3.6'",
             "version": "==3.2.2"
         },
+<<<<<<< HEAD:Pipfile.lock
         "packaging": {
             "hashes": [
                 "sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759",
@@ -627,6 +632,8 @@
             "markers": "python_version >= '3.8'",
             "version": "==24.2"
         },
+=======
+>>>>>>> ft-backend:backend/Pipfile.lock
         "psycopg2-binary": {
             "hashes": [
                 "sha256:04392983d0bb89a8717772a193cfaac58871321e3ec69514e1c4e0d4957b5aff",
