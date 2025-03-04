@@ -1,8 +1,8 @@
 """Initial migration.
 
-Revision ID: ee8942561044
+Revision ID: 52f458450ff4
 Revises: 
-Create Date: 2025-02-28 06:52:19.571482
+Create Date: 2025-03-04 11:35:35.808475
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ee8942561044'
+revision = '52f458450ff4'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,6 +44,7 @@ def upgrade():
     sa.Column('username', sa.String(length=80), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('password', sa.String(length=512), nullable=False),
+    sa.Column('profile_picture', sa.String(length=256), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('username')
@@ -57,6 +58,7 @@ def upgrade():
     sa.Column('is_read', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('reference_id', sa.Integer(), nullable=True),
+    sa.Column('solution_description', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['actor_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -70,13 +72,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['tag_id'], ['tags.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('problem_tags',
-    sa.Column('problem_id', sa.Integer(), nullable=False),
-    sa.Column('tag_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['problem_id'], ['problems.id'], ),
-    sa.ForeignKeyConstraint(['tag_id'], ['tags.id'], ),
-    sa.PrimaryKeyConstraint('problem_id', 'tag_id')
     )
     op.create_table('solutions',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -118,7 +113,6 @@ def downgrade():
     op.drop_table('votes')
     op.drop_table('subscriptions')
     op.drop_table('solutions')
-    op.drop_table('problem_tags')
     op.drop_table('problems')
     op.drop_table('notifications')
     op.drop_table('users')

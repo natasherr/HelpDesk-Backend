@@ -132,8 +132,6 @@ def get_solutions():
     tag_id = request.args.get('tag_id', type=int)
     description = request.args.get('description')
 
-
-
     # Build the query
     query = Solution.query
 
@@ -154,12 +152,12 @@ def get_solutions():
         'description': s.description,
         'tag_id': s.tag_id,
         'user': {
-                "id": s.user.id,
-                "username": s.user.username,
-            },
-        'tag':{
-            "id": s.tag.id,
-            "name": s.tag.name
+            "id": s.user.id,
+            "username": s.user.username,
+        } if s.user else None,  # Handle None user case
+        'tag': {
+            "id": s.tag.id if s.tag else None,
+            "name": s.tag.name if s.tag else None
         }
     } for s in solutions.items]
 
@@ -169,6 +167,7 @@ def get_solutions():
         'current_page': solutions.page,
         'total_solutions': solutions.total
     }), 200
+
 
 
 
