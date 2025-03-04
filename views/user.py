@@ -17,7 +17,8 @@ def fetch_users():
         user_list.append({
             'id': user.id,
             'username': user.username,
-            'email': user.email
+            'email': user.email,
+            'profile_picture': user.profile_picture
         })
     return jsonify(user_list)
 
@@ -33,6 +34,7 @@ def add_users():
     username = data['username']
     email = data['email']
     password = generate_password_hash(data['password'])
+    profile_picture = data.get('profile_picture', "https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=")
 
     check_username = User.query.filter_by(username=username).first()
     check_email = User.query.filter_by(email=email).first()
@@ -40,7 +42,7 @@ def add_users():
     if check_username or check_email:
         return jsonify({"error": "Username/email already exists"}), 409
 
-    new_user = User(username=username, email=email, password=password)
+    new_user = User(username=username, email=email, password=password, profile_picture=profile_picture)
     db.session.add(new_user)
 
     try:
@@ -64,7 +66,7 @@ def add_users():
             """
         )
         mail.send(msg)
-        return jsonify({"success": "User  created successfully!"}), 201
+        return jsonify({"success": "User created successfully!"}), 201
 
     except Exception as e:
         db.session.rollback()  # Rollback the session in case of an error
@@ -99,6 +101,9 @@ def update_profile():
     if "password" in data and data["password"]:
         user.password = generate_password_hash(data["password"])
 
+    if "profile_picture" in data:
+        user.profile_picture = data["profile_picture"]
+
     db.session.commit()
     return jsonify({'success': 'Profile updated successfully'}), 200
 
@@ -115,7 +120,7 @@ def delete_users(user_id):
     
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"error": "User you are trying to delete doesn't exist"}), 404
+        return jsonify({"error": "The user you are trying to delete doesn't exist"}), 404
     
     db.session.delete(user)
     db.session.commit()

@@ -65,7 +65,8 @@ def current_user():
     user_data = {
             'id':user.id,
             'email':user.email,
-            'username':user.username
+            'username':user.username,
+            'profile_picture':user.profile_picture
         }
     return jsonify(user_data)
 
@@ -99,8 +100,8 @@ def forgot_password():
     reset_link = f"http://localhost:5173/reset-password/{token}"
 
     # Send the email with the reset link
-    msg = Message("Password Reset Request", sender="noreply@example.com", recipients=[email])
-    msg.body = f"Click the link to reset your password: {reset_link}"
+    msg = Message("Password Reset Request", sender="ashley.testingmoringa@gmail.com", recipients=[email])
+    msg.html = f"Click <a href='{reset_link}'>here</a> to reset your password."
     mail.send(msg)
 
     return jsonify({"message": "Password reset email sent"}), 200
