@@ -7,6 +7,9 @@ from flask_cors import CORS
 from flask_mail import Mail
 import os
 
+
+
+
 app = Flask(__name__)
 
 CORS(app)
@@ -23,6 +26,9 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] =  timedelta(hours=1)
 
 jwt = JWTManager(app)
 jwt.init_app(app)
+
+
+
 
 # Flask mail configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -45,6 +51,7 @@ app.register_blueprint(problem_bp)
 app.register_blueprint(solution_bp)
 app.register_blueprint(tag_bp)
 app.register_blueprint(vote_bp)
+app.register_blueprint(subscription_bp)
 
 
 # Callback function to check if a JWT exists in the database blocklist

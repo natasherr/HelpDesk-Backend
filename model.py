@@ -1,11 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from datetime import datetime
+from sqlalchemy.sql import func
+from sqlalchemy.sql import select
+from sqlalchemy import func
+from sqlalchemy import case
 
 
 metadata = MetaData()
-
 db = SQLAlchemy(metadata=metadata)
+
 
 
 class User(db.Model):
@@ -17,6 +21,9 @@ class User(db.Model):
     profile_picture = db.Column(db.String(256), nullable=True, default='https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI=')
     # Relationships   
     votes = db.relationship('Vote', backref='user', lazy=True)
+    subscriptions = db.relationship('Subscription', backref='user', lazy=True)  # Added for follow/subscription feature
+
+    
     
 class Problem(db.Model):
     __tablename__ = 'problems'
@@ -24,17 +31,24 @@ class Problem(db.Model):
     description = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     # Relationships
-    solutions = db.relationship('Solution', backref='problem', lazy=True)
+    solutions = db.relationship("Solution", back_populates="problem", cascade="all, delete-orphan")
     user = db.relationship('User', backref='problems')
+    tag = db.relationship("Tag", back_populates="problems")
+    subscriptions = db.relationship('Subscription', backref='problem', lazy=True)  # Added for follow/subscription feature
+
 
 class Tag(db.Model):
     __tablename__ = 'tags'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    # Relationships
-    solutions = db.relationship('Solution', backref='tag', lazy=True)
-    problems = db.relationship('Problem', backref='tag', lazy=True)
+    
+    # Relationship
+    solutions = db.relationship('Solution', back_populates='tag', lazy=True)
+    problems = db.relationship('Problem', back_populates='tag', lazy=True)
+
 
 class Solution(db.Model):
     __tablename__ = 'solutions'
@@ -42,15 +56,27 @@ class Solution(db.Model):
     description = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     problem_id = db.Column(db.Integer, db.ForeignKey('problems.id'), nullable=False)
-    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)  # New relationship
-    # Relationships
-    votes = db.relationship('Vote', backref='solution', lazy=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  
+    
+    # Relationship
+    tag = db.relationship("Tag", back_populates="solutions")
+    votes = db.relationship('Vote', backref='solution', cascade="all, delete-orphan")
     user = db.relationship('User', backref='solutions')
+    problem = db.relationship("Problem", back_populates="solutions")
 
     def get_vote_counts(self):
-        likes = Vote.query.filter_by(solution_id=self.id, vote_type=1).count()
-        dislikes = Vote.query.filter_by(solution_id=self.id, vote_type=-1).count()
-        return {'likes': likes, 'dislikes': dislikes}
+        vote_counts = db.session.query(
+            func.sum(case((Vote.vote_type == 1, 1), else_=0)).label("likes"),
+            func.sum(case((Vote.vote_type == -1, 1), else_=0)).label("dislikes")
+        ).filter(Vote.solution_id == self.id).first()
+
+        return {
+            "likes": vote_counts.likes or 0,
+            "dislikes": vote_counts.dislikes or 0
+        }
+
+
 
 class Vote(db.Model):
     __tablename__ = 'votes'
@@ -60,7 +86,7 @@ class Vote(db.Model):
     vote_type = db.Column(db.Integer, nullable=False)  # 1 for like, -1 for dislike
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    
+
 class Notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
@@ -71,10 +97,24 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     reference_id = db.Column(db.Integer)  # Optional: ID of related entity (e.g., solution_id)
+    solution_description = db.Column(db.Text)
 
     # Relationships
     user = db.relationship('User', foreign_keys=[user_id], backref='notifications')  # Notification recipient
     actor = db.relationship('User', foreign_keys=[actor_id])  # User who performed the action
+
+
+class Subscription(db.Model):
+    __tablename__ = 'subscriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    problem_id = db.Column(db.Integer, db.ForeignKey('problems.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Add a unique constraint to ensure a user can only subscribe to a problem once
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'problem_id', name='unique_user_problem_subscription'),
+    )
 
 class Faq(db.Model):
     __tablename__ = 'faqs'
@@ -82,12 +122,13 @@ class Faq(db.Model):
     question = db.Column(db.String(300), nullable=False)
     answer = db.Column(db.Text, nullable=False)
     
-    def _repr_(self):
+    def __repr__(self):
         return f"<FAQ {self.question} {self.answer}>"
-
 
 
 class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, index=True)
     created_at = db.Column(db.DateTime, nullable=False)
+
+

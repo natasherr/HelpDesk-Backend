@@ -282,6 +282,15 @@
             "markers": "python_version >= '3.8'",
             "version": "==3.0.3"
         },
+        "flask-caching": {
+            "hashes": [
+                "sha256:65d7fd1b4eebf810f844de7de6258254b3248296ee429bdcb3f741bcbf7b98c9",
+                "sha256:d3efcf600e5925ea5a2fcb810f13b341ae984f5b52c00e9d9070392f3ca10761"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==2.3.1"
+        },
         "flask-cors": {
             "hashes": [
                 "sha256:5aadb4b950c4e93745034594d9f3ea6591f734bb3662e16e255ffbf5e89c88ef",
