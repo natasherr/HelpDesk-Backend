@@ -20,10 +20,6 @@ flask-caching = "*"
 itsdangerous = "*"
 sqlalchemy-serializer = "*"
 psycopg2-binary = "*"
-<<<<<<< HEAD:Pipfile
-gunicorn = "*"
-=======
->>>>>>> ft-backend:backend/Pipfile
 
 [dev-packages]
 

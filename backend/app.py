@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 CORS(app)
 # migration initialization
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://helpdb_user:eIBKbWwG2HcLNNshm1uNvQ7hwAYCXqDA@dpg-cv3fuk3tq21c73bl4tog-a.oregon-postgres.render.com/helpdb'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///help.db'
 migrate = Migrate(app, db)
 db.init_app(app)
 
