@@ -20,6 +20,7 @@ flask-caching = "*"
 itsdangerous = "*"
 sqlalchemy-serializer = "*"
 psycopg2-binary = "*"
+gunicorn = "*"
 
 [dev-packages]
 
